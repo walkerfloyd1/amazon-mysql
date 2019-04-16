@@ -10,7 +10,7 @@ var connection = sql.createConnection({
     user: "root",
 
     password: "goheels2!",
-    database: "top_songsDB"
+    database: "bamazon"
 })
 connection.connect(function(err) {
     if (err) {
@@ -29,29 +29,41 @@ function getOrder() {
         type: "input",
         name: "quantityInput",
         message: "How much of the item would you like?"
-    }]).then(function(idInput, quantityInput) {
-        connection.query("SELECT * FROM WHERE ?", {item_id: idInput}, function(err, res) {
+    }]).then(function(answer) {
+        connection.query("SELECT * FROM product WHERE item_id=?", answer.idInput, function(err, res) {
+            var item = answer.idInput;
+            var amount = answer.quantityInput;
             if (err) {
                 console.log(err)
             }
 
             if (res.length === 0) {
                 console.log("Please input an item ID");
+                getOrder();
             }
             else {
-                if (quantityInput > res.stock_quantity) {
-                    console.log("You have exceeded our stock!")
-                }
-                else {
-                    var newQuantity = res.stock_quantity - quantityInput;
-                    connection.query("UPDATE product SET stock_quantity = " + newQuantity + "WHERE item_id = " + idInput, function(err, res) {
-                        if (err) {
-                            console.log(err);
-                        }
-                        else {
-                            console.log("Your order is on the way!")
-                        }
-                    })
+                for (var i = 0; i < res.length; i++) {
+                    if (amount > res[i].stock_quantity) {
+                        console.log("You have exceeded our stock!")
+                    }
+                    else {
+                        var stock_quantity = res[i].stock_quantity - answer.quantityInput;
+                        connection.query("UPDATE product SET ? WHERE ?", 
+                        [{
+                            stock_quantity: stock_quantity,
+                        },
+                        {
+                            item_id: item,
+                        }], function(err, res) {
+                            if (err) {
+                                console.log(err);
+                            }
+                            else {
+                                console.log("Your order is on the way!")
+                            }
+                        })
+                        console.log("Your total price was: $" + res[i].price);
+                    }
                 }
             }
         })
